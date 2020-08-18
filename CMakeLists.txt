@@ -1,28 +1,35 @@
 cmake_minimum_required(VERSION 3.4)
-
 project(MAIN VERSION 0.2.0 LANGUAGES C)
 
-# FC: means "for conciseness"
-find_package(Git)  # FC: assume found
-# FC: assume that ${CMAKE_SOURCE_DIR} is git repo toplevel dir
+find_package(Git REQUIRED)
 
-# set configuration to depend on _depend_file; then touch depend with every invocation of make
-set(_git_describe_sentinel "git-describe-sentinel")
-set(_depend_file "${CMAKE_CURRENT_BINARY_DIR}/${_git_describe_sentinel}-file")
-execute_process(COMMAND ${CMAKE_COMMAND} -E touch "${_depend_file}")
+##
 
-set_property(DIRECTORY "${CURRENT_SOURCE_DIR}" APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${_depend_file}")
-add_custom_target(${_git_describe_sentinel}-target ALL COMMAND ${CMAKE_COMMAND} -E touch "${_depend_file}")
+file(GLOB _depend_file CONFIGURE_DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/*-sentinel")
 
-# FC: assume the git index is refreshed
+if (NOT EXISTS "${_depend_file}")
+  set(_depend_file "${CMAKE_CURRENT_BINARY_DIR}/git-sentinel")
+endif ()
+
+set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${_depend_file}")
+
 execute_process(
-  COMMAND ${GIT_EXECUTABLE} -C "${CMAKE_SOURCE_DIR}" describe --dirty --always
+  COMMAND ${GIT_EXECUTABLE} -C "${MAIN_SOURCE_DIR}" describe --dirty --always
   OUTPUT_STRIP_TRAILING_WHITESPACE
-  OUTPUT_VARIABLE _git_describe
-  )
-set(PROJECT_VERSION_STRING "${PROJECT_VERSION}+${_git_describe}")
+  OUTPUT_VARIABLE git_describe)
 
-add_executable(main "")
+file(WRITE ${_depend_file} ${git_describe})
+
+add_custom_target(update-sentinel COMMAND ${CMAKE_COMMAND} -E touch "$<SHELL_PATH:${_depend_file}>")
+
+##
+
+set(PROJECT_VERSION_STRING "${PROJECT_VERSION}+${git_describe}")
+
+##
+
+add_executable(main)
+add_dependencies(main update-sentinel)
 
 add_subdirectory(include)
 add_subdirectory(src)
