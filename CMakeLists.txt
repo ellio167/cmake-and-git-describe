@@ -4,7 +4,7 @@ project(MAIN VERSION 0.2.0 LANGUAGES C)
 
 # FC: means "for conciseness"
 find_package(Git)  # FC: assume found
-# FC: assume that ${CMAKE_SOURCE_DIR} is git repo toplevel dir
+# FC: assume that ${PROJECT_SOURCE_DIR} is git repo toplevel dir
 
 # set configuration to depend on _depend_file; then touch depend with every invocation of make
 set(_git_describe_sentinel "git-describe-sentinel")
@@ -16,7 +16,7 @@ add_custom_target(${_git_describe_sentinel}-target ALL COMMAND ${CMAKE_COMMAND} 
 
 # FC: assume the git index is refreshed
 execute_process(
-  COMMAND ${GIT_EXECUTABLE} -C "${CMAKE_SOURCE_DIR}" describe --dirty --always
+  COMMAND ${GIT_EXECUTABLE} -C "${PROJECT_SOURCE_DIR}" describe --dirty --always
   OUTPUT_STRIP_TRAILING_WHITESPACE
   OUTPUT_VARIABLE _git_describe
   )
